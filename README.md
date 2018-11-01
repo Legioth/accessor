@@ -14,6 +14,8 @@ Accessor.ofConsumer(this::addMessage)
         .bind(this);
 ```
 
+See https://github.com/Legioth/accessor/blob/master/src/test/java/org/github/legioth/accessor/DemoView.java#L22 for more usage examples.
+
 ## Development instructions
 
 Starting the test/demo server:
