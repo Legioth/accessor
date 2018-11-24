@@ -227,8 +227,8 @@ public abstract class Accessor implements Serializable {
      * the UI of the bound component.
      * 
      * @param uiAccess
-     *            a callback that run UI access with the command passed to it,
-     *            not <code>null</code>
+     *            a callback that delegates to UI.access(), not
+     *            <code>null</code>
      * @return a registration for unsubscribing, not <code>null</code>
      */
     protected abstract Registration subscribe(
