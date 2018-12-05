@@ -3,22 +3,34 @@ package org.github.legioth.accessor;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 
-import com.vaadin.flow.component.Component;
-import com.vaadin.flow.component.UI;
-import com.vaadin.flow.component.checkbox.Checkbox;
-import com.vaadin.flow.component.html.Div;
-import com.vaadin.flow.component.html.Paragraph;
-import com.vaadin.flow.component.page.Push;
-import com.vaadin.flow.router.Route;
-import com.vaadin.flow.shared.Registration;
+import javax.servlet.annotation.WebServlet;
+
+import com.vaadin.annotations.Push;
+import com.vaadin.annotations.VaadinServletConfiguration;
+import com.vaadin.server.VaadinRequest;
+import com.vaadin.server.VaadinServlet;
+import com.vaadin.shared.Registration;
+import com.vaadin.ui.CheckBox;
+import com.vaadin.ui.Component;
+import com.vaadin.ui.HorizontalLayout;
+import com.vaadin.ui.Label;
+import com.vaadin.ui.UI;
+import com.vaadin.ui.VerticalLayout;
 
 @Push
-@Route("")
-public class DemoView extends Div {
+public class DemoUI extends UI {
+    @WebServlet(value = "/*", asyncSupported = true)
+    @VaadinServletConfiguration(ui = DemoUI.class, productionMode = false)
+    public static class DemoServlet extends VaadinServlet {
+
+    }
+
     private final MessageDisplay globalMessages = new MessageDisplay();
     private Registration globalRegistration;
+    private VerticalLayout layout = new VerticalLayout();
 
-    public DemoView() {
+    @Override
+    protected void init(VaadinRequest request) {
         /*
          * Basic case where subscription accepts a Consumer and returns a
          * Registration. The accessor is bound to the attach and detach events
@@ -75,25 +87,33 @@ public class DemoView extends Div {
         Accessor globalAccessor = Accessor
                 .ofConsumer(globalMessages::addMessage)
                 .withSubscriber(DemoSubscription::subscribe);
-        Checkbox globalToggle = createToggle("Global binding",
+        CheckBox globalToggle = createToggle("Global binding",
                 ui -> globalRegistration = globalAccessor.bind(ui),
                 ui -> globalRegistration.remove());
 
         /*
          * Build the demo UI.
          */
-        add(createAttachDetachToggle("Basic case", basicMessages),
+        HorizontalLayout toggles = new HorizontalLayout(
+                createAttachDetachToggle("Basic case", basicMessages),
                 createAttachDetachToggle("Runnable accessor", runnableMessages),
                 createAttachDetachToggle("BiConsumer accessor",
                         biConsumerMessages),
                 createAttachDetachToggle("Unsubscriber accessor",
                         unsubscriberMessages),
-                globalToggle, globalMessages);
+                globalToggle);
+
+        layout.addComponents(toggles, globalMessages);
+        setContent(layout);
     }
 
-    private static class MessageDisplay extends Div {
+    private static class MessageDisplay extends VerticalLayout {
+        public MessageDisplay() {
+            setMargin(false);
+        }
+
         public void addMessage(String message) {
-            add(new Paragraph(message));
+            addComponent(new Label(message));
         }
 
         public void generateMessage() {
@@ -101,21 +121,23 @@ public class DemoView extends Div {
         }
     }
 
-    private Checkbox createAttachDetachToggle(String label,
+    private CheckBox createAttachDetachToggle(String label,
             Component component) {
-        return createToggle(label, ui -> add(component),
-                ui -> remove(component));
+        return createToggle(label, ui -> layout.addComponent(component),
+                ui -> layout.removeComponent(component));
     }
 
-    private static Checkbox createToggle(String label,
+    private static CheckBox createToggle(String label,
             Consumer<UI> enableAction, Consumer<UI> disableAction) {
-        return new Checkbox(label, valueChange -> {
-            UI ui = valueChange.getSource().getUI().get();
+        CheckBox checkBox = new CheckBox(label);
+        checkBox.addValueChangeListener(valueChange -> {
+            UI ui = checkBox.getUI();
             if (valueChange.getValue() == Boolean.TRUE) {
                 enableAction.accept(ui);
             } else {
                 disableAction.accept(ui);
             }
         });
+        return checkBox;
     }
 }

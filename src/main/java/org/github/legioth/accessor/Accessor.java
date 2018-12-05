@@ -4,13 +4,12 @@ import java.io.Serializable;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
-import com.vaadin.flow.component.Component;
-import com.vaadin.flow.component.UI;
-import com.vaadin.flow.component.UIDetachedException;
-import com.vaadin.flow.function.SerializableConsumer;
-import com.vaadin.flow.function.SerializableFunction;
-import com.vaadin.flow.server.Command;
-import com.vaadin.flow.shared.Registration;
+import com.vaadin.server.SerializableConsumer;
+import com.vaadin.server.SerializableFunction;
+import com.vaadin.shared.Registration;
+import com.vaadin.ui.Component;
+import com.vaadin.ui.UI;
+import com.vaadin.ui.UIDetachedException;
 
 /**
  * Helper for managing concurrent access to a Vaadin UI based on occasional
@@ -29,6 +28,11 @@ import com.vaadin.flow.shared.Registration;
 public abstract class Accessor implements Serializable {
     private Registration subscribeRegistration;
     private boolean boundToComponent = false;
+
+    @FunctionalInterface
+    protected interface Command extends Runnable, Serializable {
+
+    }
 
     /**
      * Builder for finalizing an accessor by defining how to subscribe and
@@ -146,12 +150,15 @@ public abstract class Accessor implements Serializable {
         boundToComponent = true;
 
         Registration attachRegistration = component.addAttachListener(
-                event -> registerSubscription(event.getUI()));
+                event -> registerSubscription(event.getConnector().getUI()));
         Registration detachRegistration = component
                 .addDetachListener(event -> unsubscribe());
 
         // Subscribe immediately if already attached
-        component.getUI().ifPresent(this::registerSubscription);
+        UI attachedUi = component.getUI();
+        if (attachedUi != null) {
+            registerSubscription(attachedUi);
+        }
 
         return () -> {
             attachRegistration.remove();

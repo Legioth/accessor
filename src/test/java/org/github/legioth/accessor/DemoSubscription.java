@@ -5,7 +5,7 @@ import java.util.TimerTask;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 
-import com.vaadin.flow.shared.Registration;
+import com.vaadin.shared.Registration;
 
 /**
  * Simple example subscription manager that fires an event once per second.
